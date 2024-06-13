@@ -73,3 +73,26 @@ resource "aws_lambda_function" "handler" {
   timeout = 20
   runtime = "nodejs20.x"
 }
+
+// API Gateway
+locals {
+  openapi_template = templatefile("${path.module}/templates/openapi.tpl.yml", {
+    lambdas = aws_lambda_function.handler
+    region  = var.region
+  })
+}
+
+resource "aws_api_gateway_rest_api" "main" {
+  name               = "rest-api"
+  description        = "REST API for Lambda functions"
+  binary_media_types = ["*/*"]
+
+  body = local.openapi_template
+}
+
+resource "aws_api_gateway_deployment" "main" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  stage_name  = "prod"
+}
+
+
